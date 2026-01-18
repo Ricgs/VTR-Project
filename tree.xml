@@ -1,0 +1,69 @@
+<project name="LSystemTree" width="1512" height="800">
+    <assets>
+        <scenes>
+            <scene name="rb">
+                <file name="../models/rainbowBench.obj"/>
+            </scene>
+
+            <scene name="TestTree">
+                <geometry name="Tronco" type="BOX" material="TreeMaterial"> 
+                    <SCALE x="1.0" y="1.0" z="1.0" /> 
+                    <TRANSLATE x="0" y="0" z="0" />
+                </geometry>
+
+
+                <!--geometry name="RamoEsq" type="BOX" material="fixedColor">
+                    <SCALE x="0.15" y="1.5" z="0.15" />
+                    <TRANSLATE x="0" y="2.0" z="0" /> <ROTATE x="0" y="0" z="1" w="45" /> </geometry-->
+                
+                <!--geometry name="RamoDir" type="BOX" material="fixedColor">
+                    <SCALE x="0.15" y="1.5" z="0.15" />
+                    <TRANSLATE x="0" y="2.0" z="0" />
+                    <ROTATE x="0" y="0" z="1" w="-45" />
+                </geometry-->
+            </scene>
+
+            <scene name="LSystemScene">
+                <file name="models/generated_tree.obj" />
+            </scene>
+        </scenes>
+
+        <viewports>
+            <viewport name="MainViewport" width="1512" height="800" />
+        </viewports>
+    
+        <cameras>
+            <camera name="MainCamera">
+                <POSITION x="-1.022" y="11.381" z="26.779" />
+                <LOOK_AT_POINT x="-0.993" y="11.134" z="25.811" />
+            </camera>
+        </cameras>
+
+        <lights>
+            <light name="Sun">
+                <DIRECTION x="2" y="-1" z="-2" />
+            </light>
+        </lights>
+
+        <materialLibs>
+            <materialLib filename="tree.mlib" />
+        </materialLibs>
+    </assets>
+
+    <pipelines>
+        <pipeline name="pip1">
+            <pass class="default" name="pass1">
+                <scenes>
+                    <scene name="LSystemScene" material="TreeMaterial" />
+                </scenes>
+                <viewport name="MainViewport">
+                    <clearColor r="0.5" g="0.5" b="0.5" a="1.0" />
+                </viewport>
+                <camera name="MainCamera" />
+                <lights>
+                    <light name="Sun" />
+                </lights>
+            </pass>
+        </pipeline>
+    </pipelines>
+</project>

@@ -1,0 +1,22 @@
+<materialLib name="simple">
+    <shaders>
+        <shader name="LSystemShader" 
+                vs="shaders/tree.vert" 
+                ps="shaders/tree.frag" />
+    </shaders>
+
+    <arrays>
+        <array name="pos" type="FLOAT" itemSize="4" />
+    </arrays>
+
+    <materials>
+        <material name="TreeMaterial">
+            <shader name="LSystemShader">
+                <values>
+                    <valueof uniform="m_model" type="RENDERER" context="CURRENT" component="MODEL" />
+                    <valueof uniform="m_pv"    type="RENDERER" context="CURRENT" component="PROJECTION_VIEW" />
+                </values>
+            </shader>
+        </material>
+    </materials>
+</materialLib>
