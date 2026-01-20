@@ -1,65 +1,74 @@
--- Inicializar a semente de aleatoriedade com o tempo atual
+-- Inicializar semente
 math.randomseed(os.time())
--- "Rodar" o random algumas vezes para aquecer (bug comum em Lua/C)
 math.random(); math.random(); math.random()
 
 -- ==========================================
--- 1. BIBLIOTECA DE ÁRVORES (COM VARIAÇÕES)
+-- 1. MATEMÁTICA VETORIAL 3D (AVANÇADA)
+-- ==========================================
+function vecAdd(v1, v2) return {x=v1.x+v2.x, y=v1.y+v2.y, z=v1.z+v2.z} end
+function vecSub(v1, v2) return {x=v1.x-v2.x, y=v1.y-v2.y, z=v1.z-v2.z} end
+function vecMul(v, s)   return {x=v.x*s, y=v.y*s, z=v.z*s} end
+function vecLen(v)      return math.sqrt(v.x*v.x + v.y*v.y + v.z*v.z) end
+function vecDot(v1, v2) return v1.x*v2.x + v1.y*v2.y + v1.z*v2.z end
+
+function vecNorm(v)
+    local len = vecLen(v)
+    if len < 0.0001 then return {x=0,y=1,z=0} end -- Proteção contra div por 0
+    return {x=v.x/len, y=v.y/len, z=v.z/len}
+end
+
+function vecCross(a, b)
+    return {
+        x = a.y * b.z - a.z * b.y,
+        y = a.z * b.x - a.x * b.z,
+        z = a.x * b.y - a.y * b.x
+    }
+end
+
+-- Fórmula de Rodrigues para rodar um vetor (v) à volta de um eixo (k)
+function rotateVector(v, k, theta)
+    -- v_rot = v * cos(t) + (k x v) * sin(t) + k * (k . v) * (1 - cos(t))
+    local cosT = math.cos(theta)
+    local sinT = math.sin(theta)
+    
+    local part1 = vecMul(v, cosT)
+    local part2 = vecMul(vecCross(k, v), sinT)
+    local dot = vecDot(k, v)
+    local part3 = vecMul(k, dot * (1 - cosT))
+    
+    local res = vecAdd(part1, vecAdd(part2, part3))
+    return res
+end
+
+-- ==========================================
+-- 2. CONFIGURAÇÕES
 -- ==========================================
 local treeLibrary = {
-    -- TIPO 1: Arvore Classica (Variação nos ramos)
     ["1"] = {
-        name = "Arvore Classica Variada",
+        name = "Carvalho 3D",
         axiom = "X",
         rules = {
-            -- A regra X agora é uma LISTA de opções. O código escolhe uma ao calhas.
-            X = {
-                "F[+X]F[-X]+X",   -- Opção A: Normal
-                "F[-X]F[+X]-X",   -- Opção B: Invertida
-                "F[+X]F[-X]",     -- Opção C: Falha um ramo (mais velha)
-                "F[-X]F[+X]F+X"   -- Opção D: Ramo extra
-            },
+            -- Mesmo com regras simples, a magia 3D acontece na interpretação
+            X = { "F[+X]F[-X]+X", "F[-X]F[+X]-X", "F[+X][-X]FX" },
             F = "FF"
         },
         angle = 25.0,
         iterations = 5,
         stepSize = 0.5,
-        wobble = 10 -- Quanto o angulo treme (graus)
+        radius = 0.15,
+        wobble = 10
     },
-
-    -- TIPO 2: Arbusto Denso
     ["2"] = {
-        name = "Arbusto Selvagem",
+        name = "Arbusto Espalhado",
         axiom = "F",
         rules = {
-            F = {
-                "FF+[+F-F-F]-[-F+F+F]", -- Normal
-                "FF-[-F+F+F]+[+F-F-F]", -- Espelhado
-                "FF+[+F-F]-[-F+F]"      -- Mais magro
-            }
+            F = { "FF+[+F-F-F]-[-F+F+F]" }
         },
         angle = 22.5,
         iterations = 4,
         stepSize = 0.3,
+        radius = 0.02,
         wobble = 5
-    },
-
-    -- TIPO 3: Planta Alta (Bambu/Erva)
-    ["3"] = {
-        name = "Planta Alta",
-        axiom = "X",
-        rules = {
-            X = {
-                "F-[[X]+X]+F[+FX]-X",
-                "F+[[X]-X]-F[-FX]+X",
-                "F[+X]-X" -- Versão curta
-            },
-            F = { "FF", "FF", "F" } -- As vezes cresce menos
-        },
-        angle = 20.0,
-        iterations = 5,
-        stepSize = 0.4,
-        wobble = 2
     }
 }
 
@@ -67,23 +76,18 @@ local currentConfig = nil
 local outputFileName = "../models/generated_tree.obj"
 
 -- ==========================================
--- 2. GERAR STRING COM ALEATORIEDADE
+-- 3. GERAR L-SYSTEM
 -- ==========================================
 function generateLSystem()
     local currentString = currentConfig.axiom
-    
     for i = 1, currentConfig.iterations do
         local nextString = ""
         for j = 1, #currentString do
             local char = string.sub(currentString, j, j)
             local rule = currentConfig.rules[char]
-            
             if rule then
-                -- SE FOR UMA TABELA (LISTA), ESCOLHE UMA OPÇÃO ALEATÓRIA
                 if type(rule) == "table" then
-                    local randomIndex = math.random(1, #rule)
-                    nextString = nextString .. rule[randomIndex]
-                -- SE FOR STRING, USA DIRETO
+                    nextString = nextString .. rule[math.random(1, #rule)]
                 else
                     nextString = nextString .. rule
                 end
@@ -97,120 +101,141 @@ function generateLSystem()
 end
 
 -- ==========================================
--- 3. EXPORTAR OBJ (Modo Fitas)
+-- 4. EXPORTAR OBJ (3D REAL)
 -- ==========================================
 function writeOBJ(lString)
-    print(">> A escrever OBJ: " .. outputFileName)
+    print(">> A gerar Arvore Volumetrica 3D... " .. outputFileName)
     local file = io.open(outputFileName, "w")
     if not file then print("ERRO!"); return end
 
-    file:write("# L-System: " .. currentConfig.name .. "\n")
+    file:write("# L-System FULL 3D\n")
 
-    local baseAngle = currentConfig.angle
-    local wobbleMax = currentConfig.wobble or 0
     local step = currentConfig.stepSize
+    local sides = 6
     
-    local state = { pos = {x=0, y=0, z=0}, dir = {x=0, y=1, z=0} }
+    -- ESTADO DA TARTARUGA 3D
+    -- Agora temos Direção (H), Cima (U) e Esquerda (L)
+    local state = { 
+        pos = {x=0, y=0, z=0}, 
+        dir = {x=0, y=1, z=0}, -- Aponta para CIMA
+        up  = {x=1, y=0, z=0}, -- Referência lateral
+        radius = currentConfig.radius 
+    }
     local stack = {}
-    local vertices = {}     
-    local lines = {} 
-
-    table.insert(vertices, {x=state.pos.x, y=state.pos.y, z=state.pos.z})
-    local currentIndex = 1
+    local segments = {} 
+    local growthIndex = 0
 
     for i = 1, #lString do
         local char = string.sub(lString, i, i)
         
         if char == "F" then
-            -- Mover
-            state.pos.x = state.pos.x + state.dir.x * step
-            state.pos.y = state.pos.y + state.dir.y * step
-            state.pos.z = state.pos.z + state.dir.z * step
+            local startPos = {x=state.pos.x, y=state.pos.y, z=state.pos.z}
             
-            table.insert(vertices, {x=state.pos.x, y=state.pos.y, z=state.pos.z})
-            local newIndex = #vertices
-            table.insert(lines, {currentIndex, newIndex})
-            currentIndex = newIndex
+            -- Mover na direção atual
+            state.pos = vecAdd(state.pos, vecMul(state.dir, step))
             
-        elseif char == "+" or char == "-" then
-            -- ALEATORIEDADE ORGÂNICA NO ÂNGULO
-            -- O angulo varia um pouco (ex: entre 20 e 30 graus em vez de fixo 25)
-            local randomWobble = (math.random() * wobbleMax * 2) - wobbleMax
-            local finalAngle = math.rad(baseAngle + randomWobble)
-            
-            -- Se for '-', inverte o angulo
-            if char == "-" then finalAngle = -finalAngle end
+            local endPos = {x=state.pos.x, y=state.pos.y, z=state.pos.z}
+            growthIndex = growthIndex + 1
 
-            -- Rodar em Z
-            local ox, oy = state.dir.x, state.dir.y
-            state.dir.x = ox * math.cos(finalAngle) - oy * math.sin(finalAngle)
-            state.dir.y = ox * math.sin(finalAngle) + oy * math.cos(finalAngle)
-            
-        elseif char == "[" then
-            table.insert(stack, {
-                pos={x=state.pos.x, y=state.pos.y, z=state.pos.z}, 
-                dir={x=state.dir.x, y=state.dir.y, z=state.dir.z},
-                index=currentIndex 
+            table.insert(segments, {
+                p1=startPos, p2=endPos, 
+                radius=state.radius, id=growthIndex
             })
+            state.radius = state.radius * 0.95 
+
+        elseif char == "+" or char == "-" then
+            -- RODAR (YAW / PITCH MISTO)
+            -- A lógica antiga apenas rodava em Z. Agora vamos rodar à volta do vetor 'up'.
+            
+            local wobble = (math.random() * (currentConfig.wobble or 0) * 2) - (currentConfig.wobble or 0)
+            local ang = math.rad(currentConfig.angle + wobble)
+            if char == "-" then ang = -ang end
+
+            -- Roda a Direção e o vetor Up
+            -- Usamos o produto vetorial (Cross) para achar o eixo de rotação local
+            local axis = vecCross(state.dir, state.up) -- Eixo 'Esquerda'
+            
+            -- Para ser mais interessante, vamos rodar à volta do eixo da ESQUERDA (Pitch)
+            -- Isto faz o ramo inclinar-se para a frente/trás
+            state.dir = vecNorm(rotateVector(state.dir, axis, ang))
+            state.up  = vecNorm(rotateVector(state.up, axis, ang))
+
+        elseif char == "[" then
+            -- GUARDAR ESTADO
+            table.insert(stack, {
+                pos=state.pos, dir=state.dir, up=state.up, radius=state.radius
+            })
+            
+            -- *** O SEGREDO DO 3D ***
+            -- Sempre que criamos um novo ramo ([), rodamos a tartaruga aleatoriamente
+            -- à volta do PRÓPRIO TRONCO (Roll).
+            -- Isto espalha os ramos em todas as direções (360 graus).
+            
+            local rollAngle = math.rad(math.random(0, 360))
+            state.up = vecNorm(rotateVector(state.up, state.dir, rollAngle))
+            -- (Nota: Rodar o 'up' à volta do 'dir' não muda a direção do movimento,
+            -- mas muda para onde o PRÓXIMO '+' ou '-' vai virar)
+
         elseif char == "]" then
             if #stack > 0 then
                 local saved = table.remove(stack)
                 state.pos = saved.pos
                 state.dir = saved.dir
-                currentIndex = saved.index
+                state.up  = saved.up
+                state.radius = saved.radius
             end
         end
     end
 
-    -- Escrever Geometria (Vertices + Triangulos de Fita)
-    for _, v in ipairs(vertices) do
-        file:write(string.format("v %.4f %.4f %.4f\n", v.x, v.y, v.z))
-    end
-    
-    local vertexCount = #vertices
-    local width = 0.05
-
-    for _, l in ipairs(lines) do
-        local i1 = l[1]
-        local i2 = l[2]
-        local v1 = vertices[i1]
+    -- GERAR MALHA (IGUAL AO ANTERIOR)
+    local globalVertexCount = 0
+    for _, seg in ipairs(segments) do
+        local p1 = seg.p1; local p2 = seg.p2; local r = seg.radius; local id = seg.id
         
-        file:write(string.format("v %.4f %.4f %.4f\n", v1.x + width, v1.y, v1.z + width))
-        vertexCount = vertexCount + 1
-        local i3 = vertexCount
-        
-        file:write(string.format("f %d %d %d\n", i1, i2, i3))
-        file:write(string.format("f %d %d %d\n", i3, i2, i1))
-    end
+        local forward = vecNorm(vecSub(p2, p1))
+        local tempUp = {x=0, y=1, z=0}
+        if math.abs(forward.y) > 0.9 then tempUp = {x=1, y=0, z=0} end
+        local right = vecNorm(vecCross(forward, tempUp))
+        local up = vecNorm(vecCross(right, forward))
 
+        local startIndices = {}; local endIndices = {}
+
+        for i = 0, sides do
+            local angle = (i / sides) * math.pi * 2
+            local cosA = math.cos(angle); local sinA = math.sin(angle)
+            local offset = vecAdd(vecMul(right, cosA * r), vecMul(up, sinA * r))
+            
+            -- Vértices
+            local vBase = vecAdd(p1, offset)
+            file:write(string.format("v %.4f %.4f %.4f\n", vBase.x, vBase.y, vBase.z))
+            local vTop = vecAdd(p2, offset)
+            file:write(string.format("v %.4f %.4f %.4f\n", vTop.x, vTop.y, vTop.z))
+            
+            -- Tempo (vt)
+            file:write(string.format("vt %.1f 0.0\n", id)) 
+            file:write(string.format("vt %.1f 0.0\n", id))
+
+            globalVertexCount = globalVertexCount + 2
+            table.insert(startIndices, globalVertexCount - 1)
+            table.insert(endIndices, globalVertexCount)
+        end
+        
+        -- Faces
+        for i = 1, sides do
+            local b1 = startIndices[i]; local b2 = startIndices[i+1]
+            local t1 = endIndices[i];   local t2 = endIndices[i+1]
+            file:write(string.format("f %d/%d %d/%d %d/%d\n", b1,b1, b2,b2, t1,t1))
+            file:write(string.format("f %d/%d %d/%d %d/%d\n", t1,t1, b2,b2, t2,t2))
+        end
+    end
     file:close()
-    print(">> Sucesso! Gerado modelo único.")
+    print(">> Sucesso! Arvore 3D gerada.")
 end
 
--- ==========================================
--- 4. FUNÇÃO PRINCIPAL
--- ==========================================
 function runLSystem()
-    print("-----------------------------------")
-    print("    GERADOR ESTOCASTICO DE ARVORES ")
-    print("-----------------------------------")
-
     local selection = arg[1] or "1"
-    
-    if treeLibrary[selection] then
-        currentConfig = treeLibrary[selection]
-        print("Selecionaste: [" .. selection .. "] " .. currentConfig.name)
-        print("A gerar uma variacao unica...")
-        
-        local finalString = generateLSystem()
-        writeOBJ(finalString)
-    else
-        print("Opcao invalida. A usar padrao (1).")
-        currentConfig = treeLibrary["1"]
-        local finalString = generateLSystem()
-        writeOBJ(finalString)
-    end
-    print("-----------------------------------")
+    if treeLibrary[selection] then currentConfig = treeLibrary[selection] else currentConfig = treeLibrary["1"] end
+    writeOBJ(generateLSystem())
 end
 
 runLSystem()
