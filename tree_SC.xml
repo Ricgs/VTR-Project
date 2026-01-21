@@ -1,9 +1,6 @@
 <project name="LSystemTree" width="1512" height="800">
     <assets>
         <scenes>
-            <scene name="LSystemScene">
-                <!--file name="models/lsystem_tree.obj" /-->
-            </scene>
             <scene name="SpaceColonizationScene">
                 <file name="models/sc_tree.obj" />
             </scene>
@@ -35,7 +32,6 @@
         <pipeline name="pip1">
             <pass class="default" name="pass1">
                 <scenes>
-                    <!--scene name="LSystemScene" material="TreeMaterial" /-->
                     <scene name="SpaceColonizationScene" material="TreeMaterial" />
                 </scenes>
                 <viewport name="MainViewport">

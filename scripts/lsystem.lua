@@ -73,7 +73,7 @@ local treeLibrary = {
 }
 
 local currentConfig = nil
-local outputFileName = "../models/generated_tree.obj"
+local outputFileName = "../models/lsystem_tree.obj"
 
 -- ==========================================
 -- 3. GERAR L-SYSTEM

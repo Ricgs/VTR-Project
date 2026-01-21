@@ -1,0 +1,47 @@
+<project name="LSystemTree" width="1512" height="800">
+    <assets>
+        <scenes>
+            <scene name="LSystemScene">
+                <file name="models/lsystem_tree.obj" />
+            </scene>
+        </scenes>
+
+        <viewports>
+            <viewport name="MainViewport" width="1512" height="800" />
+        </viewports>
+    
+        <cameras>
+            <camera name="MainCamera">
+                <POSITION x="-1.022" y="11.381" z="26.779" />
+                <LOOK_AT_POINT x="-0.993" y="11.134" z="25.811" />
+            </camera>
+        </cameras>
+
+        <lights>
+            <light name="Sun">
+                <DIRECTION x="2" y="-1" z="-2" />
+            </light>
+        </lights>
+
+        <materialLibs>
+            <materialLib filename="tree.mlib" />
+        </materialLibs>
+    </assets>
+
+    <pipelines>
+        <pipeline name="pip1">
+            <pass class="default" name="pass1">
+                <scenes>
+                    <scene name="LSystemScene" material="TreeMaterial" />
+                </scenes>
+                <viewport name="MainViewport">
+                    <clearColor r="0.5" g="0.5" b="0.5" a="1.0" />
+                </viewport>
+                <camera name="MainCamera" />
+                <lights>
+                    <light name="Sun" />
+                </lights>
+            </pass>
+        </pipeline>
+    </pipelines>
+</project>
