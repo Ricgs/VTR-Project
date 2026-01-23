@@ -1,6 +1,5 @@
 -- =========================================================
--- SPACE COLONIZATION ALGORITHM (SCA)
--- Gera árvores orgânicas baseadas em atração por pontos
+-- SPACE COLONIZATION ALGORITHM (COM VARIAÇÕES)
 -- =========================================================
 
 math.randomseed(os.time())
@@ -9,25 +8,74 @@ math.random(); math.random(); math.random()
 local outputFileName = "../models/sc_tree.obj"
 
 -- ==========================================
--- 1. CONFIGURAÇÕES DA ÁRVORE
+-- 1. BIBLIOTECA DE ESPÉCIES
 -- ==========================================
-local config = {
-    numPoints = 1000,        -- Quantidade de "luz/folhas" (mais = mais denso)
-    crownRadius = 5.0,       -- Tamanho da copa da árvore
-    crownHeight = 10.0,      -- Altura onde a copa começa (centro)
-    
-    trunkHeight = 4.0,       -- Altura do tronco inicial (antes de ramificar)
-    
-    killDistance = 1.5,      -- Distância para "comer" o ponto (chegou ao destino)
-    influenceRadius = 15.0,  -- Distância máxima para ver um ponto
-    branchLength = 0.5,      -- Tamanho de cada segmento novo
-    
-    startRadius = 0.35,      -- Grossura do tronco na base
-    minRadius = 0.05         -- Grossura mínima nas pontas
+local treeLibrary = {
+    -- TIPO 1: Carvalho (Copa Esférica Clássica)
+    ["1"] = {
+        name = "Carvalho Redondo",
+        shape = "sphere",
+        numPoints = 1200,
+        crownRadius = 6.0,
+        crownHeight = 12.0, -- Centro da esfera
+        trunkHeight = 5.0,
+        killDistance = 1.5,
+        influenceRadius = 15.0,
+        branchLength = 0.5,
+        startRadius = 0.45,
+        minRadius = 0.05
+    },
+
+    -- TIPO 2: Pinheiro (Forma Cónica)
+    ["2"] = {
+        name = "Pinheiro Bravo",
+        shape = "cone",
+        numPoints = 1500,
+        crownRadius = 5.0,  -- Raio na base do cone
+        crownHeight = 15.0, -- Altura total do cone
+        trunkHeight = 3.0,  -- Tronco curto
+        killDistance = 1.2,
+        influenceRadius = 20.0, -- Vê longe para crescer a direito
+        branchLength = 0.5,
+        startRadius = 0.4,
+        minRadius = 0.02
+    },
+
+    -- TIPO 3: Cipreste (Cilindro Alto e Fino)
+    ["3"] = {
+        name = "Cipreste Fino",
+        shape = "cylinder",
+        numPoints = 1000,
+        crownRadius = 1.5,  -- Muito estreito
+        crownHeight = 14.0, -- Altura do cilindro
+        trunkHeight = 1.0,
+        killDistance = 1.0,
+        influenceRadius = 10.0,
+        branchLength = 0.4,
+        startRadius = 0.3,
+        minRadius = 0.05
+    },
+
+    -- TIPO 4: Arbusto Espalhado (Meia Esfera Baixa)
+    ["4"] = {
+        name = "Arbusto Largo",
+        shape = "hemisphere",
+        numPoints = 2000,
+        crownRadius = 8.0,
+        crownHeight = 0.0, -- No chão
+        trunkHeight = 0.5,
+        killDistance = 1.0,
+        influenceRadius = 20.0,
+        branchLength = 0.4,
+        startRadius = 0.05,
+        minRadius = 0.02
+    }
 }
 
+local config = nil -- Será preenchido pela escolha
+
 -- ==========================================
--- 2. MATEMÁTICA VETORIAL (Igual ao anterior)
+-- 2. MATEMÁTICA VETORIAL
 -- ==========================================
 function vecAdd(v1, v2) return {x=v1.x+v2.x, y=v1.y+v2.y, z=v1.z+v2.z} end
 function vecSub(v1, v2) return {x=v1.x-v2.x, y=v1.y-v2.y, z=v1.z-v2.z} end
@@ -47,64 +95,93 @@ end
 -- 3. ALGORITMO DE CRESCIMENTO
 -- ==========================================
 function generateTree()
-    print("1. A gerar nuvem de atracao...")
+    print("1. A gerar nuvem para: " .. config.name .. " (" .. config.shape .. ")")
     
-    -- A. CRIAR NUVEM DE PONTOS (ATTRACTORS)
-    -- Vamos criar uma esfera de pontos no topo
+    -- A. CRIAR NUVEM DE PONTOS (Baseado na forma)
     local attractors = {}
+    
     for i=1, config.numPoints do
-        -- Gerar ponto aleatório numa esfera
-        local theta = math.random() * 2 * math.pi
-        local phi = math.acos(2 * math.random() - 1)
-        local r = config.crownRadius * math.pow(math.random(), 1/3) -- Uniforme
+        local px, py, pz
         
-        local px = r * math.sin(phi) * math.cos(theta)
-        local py = r * math.sin(phi) * math.sin(theta) + config.crownHeight
-        local pz = r * math.cos(phi)
+        if config.shape == "sphere" then
+            -- Esfera no topo
+            local theta = math.random() * 2 * math.pi
+            local phi = math.acos(2 * math.random() - 1)
+            local r = config.crownRadius * math.pow(math.random(), 1/3)
+            px = r * math.sin(phi) * math.cos(theta)
+            py = r * math.sin(phi) * math.sin(theta) + config.crownHeight
+            pz = r * math.cos(phi)
+            
+        elseif config.shape == "cone" then
+            -- Cone (Pinheiro)
+            local h = math.random() * config.crownHeight -- Altura aleatória dentro do cone
+            local maxR_at_H = config.crownRadius * (1 - (h / config.crownHeight)) -- Raio diminui ao subir
+            local theta = math.random() * 2 * math.pi
+            local r = math.sqrt(math.random()) * maxR_at_H
+            
+            px = r * math.cos(theta)
+            py = h + config.trunkHeight -- Começa acima do tronco
+            pz = r * math.sin(theta)
+            
+        elseif config.shape == "cylinder" then
+            -- Cilindro (Cipreste)
+            local h = math.random() * config.crownHeight
+            local theta = math.random() * 2 * math.pi
+            local r = math.sqrt(math.random()) * config.crownRadius
+            
+            px = r * math.cos(theta)
+            py = h + config.trunkHeight
+            pz = r * math.sin(theta)
+
+        elseif config.shape == "hemisphere" then
+            -- Meia esfera (Arbusto)
+            local theta = math.random() * 2 * math.pi
+            local phi = math.acos(math.random()) -- Apenas metade superior (0 a PI/2)
+            local r = config.crownRadius * math.pow(math.random(), 1/3)
+            
+            px = r * math.sin(phi) * math.cos(theta)
+            py = r * math.sin(phi) * math.sin(theta) + config.trunkHeight
+            pz = r * math.cos(phi)
+        end
         
         table.insert(attractors, {pos={x=px, y=py, z=pz}, active=true})
     end
 
-    -- B. CRIAR TRONCO INICIAL (NODES)
-    -- Criamos nós empilhados até chegar perto da copa
+    -- B. CRIAR TRONCO INICIAL
     local nodes = {}
     local currY = 0
     local root = {pos={x=0, y=0, z=0}, parent=nil, childIndex=-1, thickness=config.startRadius}
     table.insert(nodes, root)
     
-    -- Criar segmentos verticais até chegar à altura da copa
-    local currentNode = root
+    -- Se o tronco for muito pequeno, garante pelo menos 1 segmento
+    if config.trunkHeight < config.branchLength then config.trunkHeight = config.branchLength end
+
     while currY < config.trunkHeight do
         currY = currY + config.branchLength
         local newNode = {
             pos = {x=0, y=currY, z=0},
-            parent = #nodes, -- Indice do pai
-            dir = {x=0, y=1, z=0}, -- Direção de crescimento
-            count = 0 -- Quantos pontos estão a puxar este nó
+            parent = #nodes,
+            dir = {x=0, y=1, z=0},
+            count = 0
         }
         table.insert(nodes, newNode)
-        currentNode = newNode
     end
 
-    print("2. A crescer ramos (Space Colonization)...")
+    print("2. A colonizar espaco...")
     
     -- C. LOOP DE CRESCIMENTO
     local growing = true
     local iterations = 0
     
-    while growing and iterations < 200 do
+    while growing and iterations < 300 do
         iterations = iterations + 1
-        growing = false -- Assumimos que parou, a menos que algo cresça
+        growing = false 
         
-        -- Reset das forças nos nós
-        for _, n in ipairs(nodes) do
-            n.force = {x=0, y=0, z=0}
-            n.count = 0
-        end
+        -- Reset
+        for _, n in ipairs(nodes) do n.force = {x=0,y=0,z=0}; n.count = 0 end
 
-        -- 1. Associar pontos aos nós mais próximos
+        -- 1. Associar pontos
         local pointsActive = 0
-        
         for _, point in ipairs(attractors) do
             if point.active then
                 pointsActive = pointsActive + 1
@@ -112,66 +189,53 @@ function generateTree()
                 local minDist = 999999.0
                 local closestIndex = -1
 
-                -- Procura o nó mais próximo deste ponto
-                -- (Isto podia ser otimizado com Octree, mas para <2000 pontos serve)
                 for i, node in ipairs(nodes) do
                     local d = vecDist(point.pos, node.pos)
                     if d < minDist and d < config.influenceRadius then
-                        minDist = d
-                        closestNode = node
-                        closestIndex = i
+                        minDist = d; closestNode = node; closestIndex = i
                     end
                 end
 
                 if closestNode then
-                    -- Se o ponto estiver muito perto, morre (foi comido)
                     if minDist < config.killDistance then
-                        point.active = false
+                        point.active = false -- Comeu o ponto
                     else
-                        -- Senão, o ponto PUXA o nó
                         local dir = vecNorm(vecSub(point.pos, closestNode.pos))
                         closestNode.force = vecAdd(closestNode.force, dir)
                         closestNode.count = closestNode.count + 1
-                        growing = true -- Ainda há atividade
+                        growing = true
                     end
                 end
             end
         end
 
-        -- Se não sobrar pontos, paramos
         if pointsActive == 0 then break end
 
-        -- 2. Criar novos ramos baseado nas forças
+        -- 2. Criar novos ramos
         local newNodes = {}
         for i, node in ipairs(nodes) do
             if node.count > 0 then
-                -- A direção é a média de todas as atrações
                 local avgDir = vecNorm(node.force)
-                
-                -- Adicionar um novo nó nessa direção
+                -- Pequeno jitter para não ficar linhas retas perfeitas
+                avgDir.x = avgDir.x + (math.random()-0.5)*0.1
+                avgDir.z = avgDir.z + (math.random()-0.5)*0.1
+                avgDir = vecNorm(avgDir)
+
                 local newPos = vecAdd(node.pos, vecMul(avgDir, config.branchLength))
-                
-                table.insert(newNodes, {
-                    pos = newPos,
-                    parent = i, -- O pai é o indice atual
-                    thickness = config.minRadius -- Temporário
-                })
+                table.insert(newNodes, { pos = newPos, parent = i, thickness = config.minRadius })
             end
         end
 
-        -- Adicionar os novos ramos à lista principal
-        for _, n in ipairs(newNodes) do
-            table.insert(nodes, n)
-        end
+        for _, n in ipairs(newNodes) do table.insert(nodes, n) end
     end
     
-    print("3. Calculando espessuras (Pipe Model)...")
-    -- Simulação simples de espessura (Leonardo da Vinci rule invertida)
-    -- Vamos atribuir peso baseado na quantidade de filhos (simplificado para profundidade)
-    -- Como é complexo fazer backtracking perfeito em Lua simples, vamos fazer um Tapering linear baseado na altura
+    print("3. Calculando espessuras...")
+    -- Tapering simples baseado na altura relativa
+    local maxHeight = 0
+    for _, n in ipairs(nodes) do if n.pos.y > maxHeight then maxHeight = n.pos.y end end
+    
     for _, node in ipairs(nodes) do
-        -- Quanto mais alto (Y), mais fino
-        local ratio = 1.0 - (node.pos.y / (config.crownHeight + config.crownRadius))
+        local ratio = 1.0 - (node.pos.y / (maxHeight + 1))
         if ratio < 0.1 then ratio = 0.1 end
         node.thickness = config.startRadius * ratio
     end
@@ -180,58 +244,49 @@ function generateTree()
 end
 
 -- ==========================================
--- 4. EXPORTAR OBJ (CILINDROS)
+-- 4. EXPORTAR OBJ
 -- ==========================================
 function writeOBJ(nodes)
-    print("4. A exportar geometria 3D... " .. outputFileName)
+    print("4. A exportar OBJ... " .. outputFileName)
     local file = io.open(outputFileName, "w")
     if not file then print("ERRO!"); return end
 
-    file:write("# Space Colonization Tree\n")
-    
+    file:write("# Space Colonization: " .. config.name .. "\n")
+    local sides = 6
     local globalVertexCount = 0
-    local sides = 6 -- Hexagonos
 
-    -- Ignoramos o primeiro nó (root) porque precisamos de pares (Pai -> Filho)
     for i=2, #nodes do
         local node = nodes[i]
         local parent = nodes[node.parent]
+        local p1 = parent.pos; local p2 = node.pos; local r = node.thickness
         
-        local p1 = parent.pos
-        local p2 = node.pos
-        local r = node.thickness or 0.1
-        
-        -- Geometria do Cilindro (Igual ao L-System)
         local forward = vecNorm(vecSub(p2, p1))
         local tempUp = {x=0, y=1, z=0}
         if math.abs(forward.y) > 0.9 then tempUp = {x=1, y=0, z=0} end
         local right = vecNorm(vecCross(forward, tempUp))
         local up = vecNorm(vecCross(right, forward))
 
-        local startIndices = {}
-        local endIndices = {}
+        local startIndices = {}; local endIndices = {}
 
         for k = 0, sides do
             local angle = (k / sides) * math.pi * 2
             local offset = vecAdd(vecMul(right, math.cos(angle)*r), vecMul(up, math.sin(angle)*r))
             
-            -- Vertices
             local vBase = vecAdd(p1, offset)
             file:write(string.format("v %.4f %.4f %.4f\n", vBase.x, vBase.y, vBase.z))
             local vTop = vecAdd(p2, offset)
             file:write(string.format("v %.4f %.4f %.4f\n", vTop.x, vTop.y, vTop.z))
             
-            -- UVs (Tempo = indice do nó)
-            local timeID = i
-            file:write(string.format("vt %.1f 0.0\n", timeID))
-            file:write(string.format("vt %.1f 0.0\n", timeID))
+            -- UVs para animação (ID do nó)
+            local id = i
+            file:write(string.format("vt %.1f 0.0\n", id))
+            file:write(string.format("vt %.1f 0.0\n", id))
             
             globalVertexCount = globalVertexCount + 2
             table.insert(startIndices, globalVertexCount - 1)
             table.insert(endIndices, globalVertexCount)
         end
         
-        -- Faces
         for k = 1, sides do
             local b1 = startIndices[k]; local b2 = startIndices[k+1]
             local t1 = endIndices[k];   local t2 = endIndices[k+1]
@@ -239,11 +294,20 @@ function writeOBJ(nodes)
             file:write(string.format("f %d/%d %d/%d %d/%d\n", t1,t1, b2,b2, t2,t2))
         end
     end
-
     file:close()
-    print(">> Sucesso! Arvore SC gerada.")
+    print(">> Sucesso!")
 end
 
--- EXECUTAR
+-- ==========================================
+-- 5. RUN
+-- ==========================================
+local selection = arg[1] or "1"
+if treeLibrary[selection] then
+    config = treeLibrary[selection]
+else
+    print("Opcao invalida. A usar padrao [1].")
+    config = treeLibrary["1"]
+end
+
 local treeNodes = generateTree()
 writeOBJ(treeNodes)

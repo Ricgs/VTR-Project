@@ -44,31 +44,80 @@ end
 -- 2. CONFIGURAÇÕES
 -- ==========================================
 local treeLibrary = {
-    ["1"] = {
-        name = "Carvalho 3D",
-        axiom = "X",
-        rules = {
-            -- Mesmo com regras simples, a magia 3D acontece na interpretação
-            X = { "F[+X]F[-X]+X", "F[-X]F[+X]-X", "F[+X][-X]FX" },
-            F = "FF"
-        },
-        angle = 25.0,
-        iterations = 5,
-        stepSize = 0.5,
-        radius = 0.15,
-        wobble = 10
-    },
-    ["2"] = {
-        name = "Arbusto Espalhado",
+    ["a"] = {
+        name = "Exemplo A",
         axiom = "F",
         rules = {
-            F = { "FF+[+F-F-F]-[-F+F+F]" }
+            F = { "F[+F]F[-F]F" }
+        },
+        angle = 25.7,
+        iterations = 4,
+        stepSize = 0.3,
+        radius = 0.02,
+        wobble = 5
+    },
+    ["b"] = {
+        name = "Exemplo B",
+        axiom = "F",
+        rules = {
+            F = { "F[+F]F[-F][F]" }
+        },
+        angle = 20,
+        iterations = 5,
+        stepSize = 0.3,
+        radius = 0.02,
+        wobble = 5
+    },
+    ["c"] = {
+        name = "Exemplo C",
+        axiom = "F",
+        rules = {
+            F = { "FF-[-F+F+F]+[+F-F-F]" }
         },
         angle = 22.5,
         iterations = 4,
         stepSize = 0.3,
         radius = 0.02,
         wobble = 5
+    },
+    ["d"] = {
+        name = "Exemplo D",
+        axiom = "X",
+        rules = {
+            X = { "F[+X]F[-X]+X" },
+            F = "FF"
+        },
+        angle = 20,
+        iterations = 7,
+        stepSize = 0.1,
+        radius = 0.02,
+        wobble = 10
+    },
+    ["e"] = {
+        name = "Exemplo E",
+        axiom = "X",
+        rules = {
+            X = { "F[+X][-X]FX" },
+            F = "FF"
+        },
+        angle = 25.7,
+        iterations = 7,
+        stepSize = 0.1,
+        radius = 0.02,
+        wobble = 10
+    },
+    ["f"] = {
+        name = "Exemplo F",
+        axiom = "X",
+        rules = {
+            X = { "F-[[X]+X]+F[+FX]-X" },
+            F = "FF"
+        },
+        angle = 22.5,
+        iterations = 5,
+        stepSize = 0.3,
+        radius = 0.02,
+        wobble = 10
     }
 }
 
@@ -141,7 +190,7 @@ function writeOBJ(lString)
                 p1=startPos, p2=endPos, 
                 radius=state.radius, id=growthIndex
             })
-            state.radius = state.radius * 0.95 
+            -- state.radius = state.radius * 0.95 
 
         elseif char == "+" or char == "-" then
             -- RODAR (YAW / PITCH MISTO)
@@ -233,8 +282,8 @@ function writeOBJ(lString)
 end
 
 function runLSystem()
-    local selection = arg[1] or "1"
-    if treeLibrary[selection] then currentConfig = treeLibrary[selection] else currentConfig = treeLibrary["1"] end
+    local selection = arg[1] or "a"
+    if treeLibrary[selection] then currentConfig = treeLibrary[selection] else currentConfig = treeLibrary["a"] end
     writeOBJ(generateLSystem())
 end
 
