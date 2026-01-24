@@ -11,8 +11,8 @@ local outputFileName = "../models/sc_tree.obj"
 -- 1. BIBLIOTECA DE ESPÉCIES
 -- ==========================================
 local treeLibrary = {
-    -- TIPO 1: Carvalho (Copa Esférica Clássica)
-    ["1"] = {
+    -- TIPO A: Carvalho (Copa Esférica Clássica)
+    ["a"] = {
         name = "Carvalho Redondo",
         shape = "sphere",
         numPoints = 1200,
@@ -26,8 +26,8 @@ local treeLibrary = {
         minRadius = 0.05
     },
 
-    -- TIPO 2: Pinheiro (Forma Cónica)
-    ["2"] = {
+    -- TIPO B: Pinheiro (Forma Cónica)
+    ["b"] = {
         name = "Pinheiro Bravo",
         shape = "cone",
         numPoints = 1500,
@@ -41,8 +41,8 @@ local treeLibrary = {
         minRadius = 0.02
     },
 
-    -- TIPO 3: Cipreste (Cilindro Alto e Fino)
-    ["3"] = {
+    -- TIPO C: Cipreste (Cilindro Alto e Fino)
+    ["c"] = {
         name = "Cipreste Fino",
         shape = "cylinder",
         numPoints = 1000,
@@ -56,8 +56,8 @@ local treeLibrary = {
         minRadius = 0.05
     },
 
-    -- TIPO 4: Arbusto Espalhado (Meia Esfera Baixa)
-    ["4"] = {
+    -- TIPO D: Arbusto Espalhado (Meia Esfera Baixa)
+    ["d"] = {
         name = "Arbusto Largo",
         shape = "hemisphere",
         numPoints = 2000,
@@ -107,7 +107,7 @@ function generateTree()
             -- Esfera no topo
             local theta = math.random() * 2 * math.pi
             local phi = math.acos(2 * math.random() - 1)
-            local r = config.crownRadius * math.pow(math.random(), 1/3)
+            local r = config.crownRadius * (math.random() ^ (1/3))
             px = r * math.sin(phi) * math.cos(theta)
             py = r * math.sin(phi) * math.sin(theta) + config.crownHeight
             pz = r * math.cos(phi)
@@ -137,7 +137,7 @@ function generateTree()
             -- Meia esfera (Arbusto)
             local theta = math.random() * 2 * math.pi
             local phi = math.acos(math.random()) -- Apenas metade superior (0 a PI/2)
-            local r = config.crownRadius * math.pow(math.random(), 1/3)
+            local r = config.crownRadius * (math.random() ^ (1/3))
             
             px = r * math.sin(phi) * math.cos(theta)
             py = r * math.sin(phi) * math.sin(theta) + config.trunkHeight
@@ -301,12 +301,13 @@ end
 -- ==========================================
 -- 5. RUN
 -- ==========================================
-local selection = arg[1] or "1"
+local selection = arg[1] or "a"
+
 if treeLibrary[selection] then
     config = treeLibrary[selection]
 else
-    print("Opcao invalida. A usar padrao [1].")
-    config = treeLibrary["1"]
+    print("Opcao invalida. A usar padrao [a].")
+    config = treeLibrary["a"]
 end
 
 local treeNodes = generateTree()
