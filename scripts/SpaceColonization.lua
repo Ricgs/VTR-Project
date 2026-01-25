@@ -22,7 +22,7 @@ local treeLibrary = {
         killDistance = 1.5,
         influenceRadius = 15.0,
         branchLength = 0.5,
-        startRadius = 0.45,
+        startRadius = 0.25,
         minRadius = 0.05
     },
 
@@ -37,7 +37,7 @@ local treeLibrary = {
         killDistance = 1.2,
         influenceRadius = 20.0, -- Vê longe para crescer a direito
         branchLength = 0.5,
-        startRadius = 0.4,
+        startRadius = 0.25,
         minRadius = 0.02
     },
 
@@ -52,7 +52,7 @@ local treeLibrary = {
         killDistance = 1.0,
         influenceRadius = 10.0,
         branchLength = 0.4,
-        startRadius = 0.3,
+        startRadius = 0.15,
         minRadius = 0.05
     },
 
@@ -60,14 +60,14 @@ local treeLibrary = {
     ["d"] = {
         name = "Arbusto Largo",
         shape = "hemisphere",
-        numPoints = 2000,
+        numPoints = 1500,
         crownRadius = 8.0,
         crownHeight = 0.0, -- No chão
         trunkHeight = 0.5,
         killDistance = 1.0,
         influenceRadius = 20.0,
         branchLength = 0.4,
-        startRadius = 0.05,
+        startRadius = 0.15,
         minRadius = 0.02
     }
 }
@@ -140,8 +140,8 @@ function generateTree()
             local r = config.crownRadius * (math.random() ^ (1/3))
             
             px = r * math.sin(phi) * math.cos(theta)
-            py = r * math.sin(phi) * math.sin(theta) + config.trunkHeight
-            pz = r * math.cos(phi)
+            pz = r * math.sin(phi) * math.sin(theta) 
+            py = r * math.cos(phi) + config.trunkHeight
         end
         
         table.insert(attractors, {pos={x=px, y=py, z=pz}, active=true})
